@@ -15,6 +15,11 @@ import os
 import json
 from collections import OrderedDict
 
+# Ensure Unicode output on Windows (avoids GBK encoding crash)
+if sys.platform == 'win32':
+    import io
+    sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+
 # Canonical pattern — the LLM normalizes all formats to [CITE:key] before running this
 PLACEHOLDER_RE = re.compile(r'\[CITE:([a-zA-Z0-9_\-]+)\]')
 
