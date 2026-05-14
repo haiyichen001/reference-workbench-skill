@@ -178,11 +178,10 @@ After every write scenario completes, count unique `[CITE:xxx]` placeholders:
 
 | Unique citations | Action |
 |-----------------|--------|
-| < 2 | Skip — draft has no real reference list yet |
-| 2 – 4 | **Run silent quick check** |
+| < 5 | **Run silent quick check** |
 | ≥ 5 | **Skip** — defer to Phase 5 (too many citations for per-edit checking) |
 
-When the threshold is met (2–4 refs):
+When the threshold is met (< 5 refs):
 
 1. Extract all unique `[CITE:xxx]` placeholders from the draft
 2. For each, run a **quick** existence check only (no metadata/content layers):
