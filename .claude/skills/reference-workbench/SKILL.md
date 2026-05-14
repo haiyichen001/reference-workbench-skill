@@ -70,12 +70,14 @@ mcp-categories:
 
 # Reference Workbench
 
-Two modes. The user chooses at start.
+Two modes. **Auto-detect from user input** — do NOT ask the user to choose.
 
-| Mode | Trigger | What it does |
-|------|---------|--------------|
-| **Check** | Verify citations, audit references | Existence + metadata + content support verification |
-| **Write** | Write introduction, literature review | Draft with `[CITE:xxx]` → cite_table.py → table → self-audit |
+| User says (keywords) | Auto-enter | What it does |
+|----------------------|------------|--------------|
+| check, verify, audit, validate, 查, 验, 检测 | **Mode A — Check** | Existence + metadata + content support verification |
+| write, draft, rewrite, review, literature, intro, 写, 综述, 引言, 草稿 | **Mode B — Write** | Draft with `[CITE:xxx]` → cite_table.py → table → self-audit |
+
+If ambiguous ("帮我看看这篇论文"), default to **Mode A**. If the user provides a file to check → Mode A. If the user asks to produce or revise text → Mode B.
 
 ---
 
@@ -268,16 +270,19 @@ Core loop: **normalize → run `cite_table.py` → relay table → self-audit**.
 
 Single-paper summary, pure grammar polishing, non-academic writing, format conversion only.
 
-## Four Scenarios
+## Five Scenarios
 
 | User says | Agent does |
 |-----------|-----------|
 | New review | Draft with `[CITE:xxx]` → script → **table** |
+| Rewrite draft | Normalize existing citations to `[CITE:xxx]` → script → **table** |
 | Add citation | Insert `[CITE:xxx]` → re-run script → **table** |
 | Remove citation | Remove `[CITE:xxx]` → re-run script → **table** |
 | Audit | Re-run script → checks → **table** |
 
 Every scenario ends: `cite_table.py` → `Read cite_output.txt` → paste table + checks.
+
+The draft always uses `[CITE:descriptiveKey]` placeholders. The script numbers them and outputs the table — but the source of truth is the draft itself. Self-audit checks are always performed against the draft with `[CITE:xxx]` placeholders, never against the numbered output alone.
 
 ## Always-On Checks
 
@@ -288,11 +293,11 @@ After every citation change, re-run `cite_table.py` and walk through:
 3. **Order** — gaps or jumps? Script catches this.
 4. **Orphan** — in-text count != reference count? Report.
 5. **Tone** — `references/diplomatic-critique.md` (loaded at startup). Never "fails to", "ignores", "fundamentally flawed".
-6. **Citation depth** — most citations: **who + did what + found what + [N]**. Opening/transition sentences can be broad. Body paragraphs: each cited paper gets its own sentence.
-   - Two valid positions: sentence-end (`...reduced errors by 23% [5].`) or natural pause (`...as shown in prior work [5,6], the trend...`).
-   - NEVER: `, [5],` (comma sandwich) or `Smith [5] proposed` (author-attached). Script flags these as ⚠️.
+6. **Citation depth** — most citations: **who + did what + found what + `[CITE:xxx]`**. Opening/transition sentences can be broad. Body paragraphs: each cited paper gets its own sentence.
+   - Two valid positions: sentence-end (`...reduced errors by 23% [CITE:smith2023].`) or natural pause (`...as shown in prior work [CITE:jones2021;CITE:lee2022], the trend...`).
+   - NEVER: `, [CITE:xxx],` (comma sandwich) or `Smith [CITE:smith2023] proposed` (author-attached). Script flags these as ⚠️.
 
-Report: one line per check, `✅` or `⚠️`. Then full re-scan (never fix one and skip the rest). Then read all `[N]` aloud to catch awkward flow.
+Report: one line per check, `✅` or `⚠️`. Then full re-scan (never fix one and skip the rest). Then read all `[CITE:xxx]` aloud from the draft to catch awkward flow.
 
 ## Table Protocol (Mandatory)
 
