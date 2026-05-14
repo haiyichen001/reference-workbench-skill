@@ -1,9 +1,56 @@
 ---
 name: reference-workbench
-description: Academic citation toolkit — verify reference authenticity or write literature reviews with auto-generated bibliographies. Checks paper existence, metadata accuracy, and content support. Supports PDF, DOCX, TXT, Markdown, LaTeX. Merges former citation-check and introduction-review skills. Use /reference-workbench to invoke.
+description: >
+  Academic citation toolkit — verify reference authenticity or write literature reviews
+  with auto-generated bibliographies. Checks paper existence, metadata accuracy, and whether
+  cited claims are actually supported. Supports PDF, DOCX, TXT, Markdown, LaTeX.
+  Use when user asks to: "check citations", "verify references", "audit citations",
+  "validate my references", "are these citations real", "write introduction",
+  "write literature review", "review my lit review", "generate bibliography",
+  "format references", "check my paper's citations", "citation audit",
+  "fact-check references", "proofread citations", "verify my bibliography",
+  "帮我查引用", "检查论文引用", "写文献综述", "验证参考文献", "引用查证".
+  Merges former citation-check and introduction-review skills.
+allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch, AskUserQuestion, Agent, TaskCreate, TaskUpdate, TaskList
 compatibility: Requires MCP servers: arxiv, scholar, paper-search, pdf-reader. Python package: rich.
-version: 1.0.0
+version: 1.1.0
 license: MIT
+metadata:
+  author: haiyichen001
+  version: "1.1.0"
+  category: academic-writing
+  language: bilingual (中文 / English)
+  tags:
+    - citation-verification
+    - citation-check
+    - literature-review
+    - reference-management
+    - reference-validation
+    - academic-writing
+    - bibliography
+    - paper-check
+    - citation-audit
+    - introduction-writing
+    - lit-review
+    - academic-publishing
+    - research-writing
+  supported-formats:
+    - PDF
+    - DOCX
+    - TXT
+    - Markdown
+    - LaTeX
+  sources:
+    - agentskills.io specification
+    - Semantic Scholar API (via scholar MCP)
+    - arXiv API (via arxiv MCP)
+    - Google Scholar (via paper-search MCP)
+    - PubMed / bioRxiv / medRxiv (via paper-search MCP)
+  replaces:
+    - citation-check-skill (https://github.com/haiyichen001/citation-check-skill)
+    - introduction-review-skill (https://github.com/haiyichen001/introduction-review-skill)
+  created: "2026-05-14"
+  modified: "2026-05-14"
 ---
 
 # Reference Workbench
