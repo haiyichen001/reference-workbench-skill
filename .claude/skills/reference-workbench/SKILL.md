@@ -12,12 +12,12 @@ description: >
   "帮我查引用", "检查论文引用", "写文献综述", "验证参考文献", "引用查证".
   Merges former citation-check and introduction-review skills.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch, AskUserQuestion, Agent, TaskCreate, TaskUpdate, TaskList
-compatibility: Requires MCP servers: arxiv, scholar, paper-search, pdf-reader. Python package: rich.
-version: 1.1.0
+compatibility: Requires MCP servers: arxiv, scholar, paper-search, pdf-reader, crossref. Python package: rich.
+version: 1.2.0
 license: MIT
 metadata:
   author: haiyichen001
-  version: "1.1.0"
+  version: "1.2.0"
   category: academic-writing
   language: bilingual (中文 / English)
   tags:
@@ -69,10 +69,10 @@ Two modes. The user chooses at start.
 Scan MCP tools. Output one line:
 
 ```
-MCP: arxiv ✅ | scholar ✅ | paper-search ✅ | pdf-reader ✅
+MCP: arxiv ✅ | scholar ✅ | paper-search ✅ | pdf-reader ✅ | crossref ✅
 ```
 
-If any missing, stop and output install commands. Also run `bash ${CLAUDE_SKILL_DIR}/scripts/setup.sh` to check Python and `rich`.
+If any missing, stop and output install commands. Also run `python ${CLAUDE_SKILL_DIR}/scripts/setup.py` to check Python and `rich`.
 
 ---
 
