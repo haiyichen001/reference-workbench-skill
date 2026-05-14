@@ -81,6 +81,17 @@ Single pipeline: **Write → Self-Audit → Auto Quick Check → (when done) Off
 
 You can also use `/reference-workbench` directly with a file to run a full citation verification.
 
+### Example files
+
+Two real academic texts included in `assets/` to test the skill:
+
+| File | Content | Citations |
+|------|---------|-----------|
+| `assets/example-draft-en.md` | English journal paper intro (3D-printed concrete, *Commun. Eng.* 2026) | 39 refs, IEEE |
+| `assets/example-draft-zh.md` | Chinese doctoral thesis intro (Ce-MOFs, USTB 2025) | 19 refs, GB/T 7714 |
+
+To try the skill: copy either file, then run `/reference-workbench` and paste it. The skill will auto-detect the language and format.
+
 ### Verification statuses
 
 | Status | Meaning |
