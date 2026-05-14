@@ -1,5 +1,10 @@
 # Reference Workbench Skill
 
+[![Version](https://img.shields.io/badge/version-2.0.0-blue)](https://github.com/haiyichen001/reference-workbench-skill/releases)
+[![License: MIT](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
+[![Agent Skills](https://img.shields.io/badge/agent--skills-compatible-green)](https://agentskills.io)
+[![Platform](https://img.shields.io/badge/platforms-Claude%20Code%20%7C%20Codex%20%7C%20Gemini%20%7C%20Cursor%20%7C%20VS%20Code-lightgrey)](https://agentskills.io)
+
 An agent skill that verifies academic citations and writes literature reviews with auto-generated bibliographies. Checks paper existence, metadata accuracy, and whether cited claims are actually supported. Compatible with Claude Code, Codex, Gemini CLI, Cursor, VS Code, and 20+ other editors that support the Agent Skills standard.
 
 This skill merges and supersedes the former [citation-check-skill](https://github.com/haiyichen001/citation-check-skill) and [introduction-review-skill](https://github.com/haiyichen001/introduction-review-skill).
