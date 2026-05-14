@@ -11,6 +11,7 @@ description: >
   "fact-check references", "proofread citations", "verify my bibliography",
   "帮我查引用", "检查论文引用", "写文献综述", "验证参考文献", "引用查证".
   Merges former citation-check and introduction-review skills.
+user-invocable: true
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch, AskUserQuestion, Agent, TaskCreate, TaskUpdate, TaskList
 compatibility: >
   Search MCPs (paper lookup): arxiv, scholar, paper-search, crossref.
@@ -171,25 +172,29 @@ Without `--bib`: 5 columns (# | Author | Body Context | Reference | Status). Wit
 
 ---
 
-## Phase 3 — Auto Quick Check (Silent)
+## Phase 3 — Auto Quick Check (Silent, Small Drafts Only)
 
-**After every write scenario completes, run this silently.** No AskUserQuestion, no prompt.
+After every write scenario completes, count unique `[CITE:xxx]` placeholders:
 
-1. Extract all unique citations from the draft (parse `[CITE:xxx]` placeholders)
-2. For each unique citation, run a **quick** existence check only (no metadata/content layers):
+| Unique citations | Action |
+|-----------------|--------|
+| < 2 | Skip — draft has no real reference list yet |
+| 2 – 4 | **Run silent quick check** |
+| ≥ 5 | **Skip** — defer to Phase 5 (too many citations for per-edit checking) |
+
+When the threshold is met (2–4 refs):
+
+1. Extract all unique `[CITE:xxx]` placeholders from the draft
+2. For each, run a **quick** existence check only (no metadata/content layers):
    - Try DOI lookup → arXiv lookup → title search. Stop at first hit.
    - If all fail → flag as ❓ unchecked
-3. Output a one-line summary in the conversation:
+3. Output a one-line summary:
 
 ```
-Quick check: 12 refs — 11 found ✅ | 1 unchecked ❓ (Smith 2022 — no DOI/arXiv match)
+Quick check: 3 refs — 3 found ✅
 ```
 
-Do NOT ask the user for depth or scope. If all found → no extra output beyond the summary line.
-
-### When the Draft Has No Citations Yet
-
-If the draft is still being written and has fewer than 2 `[CITE:xxx]` placeholders, skip the quick check. Resume after the next write operation.
+No AskUserQuestion. If all found → no extra output beyond the summary line. If any unchecked → flag it and note that Phase 5 will offer a deeper check.
 
 ---
 
