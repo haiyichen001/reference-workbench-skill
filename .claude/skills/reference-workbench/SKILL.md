@@ -161,7 +161,7 @@ Without `--bib`: 5 columns (# | Author | Body Context | Reference | Status). Wit
 ### Reference Files
 
 - `anti-laziness-protocol.md` — **loaded at startup**. Mandatory 5-step verification gate. Itemized only, no batching.
-- `citation-placement-rules.md` — **loaded at startup**. Per-citation placement enforcement.
+- `citation-placement-rules.md` — **loaded on-demand** during self-audit checks. Citation position rules (sentence-end / comma sandwich / author-attached).
 - `diplomatic-critique.md` — **loaded at startup**. Mandatory tone guard.
 - `citation-formats.md` — **loaded on-demand** when user specifies a venue. IEEE/SCI/EI/GB7714/APA/MLA/Chicago/ACM rules.
 - `citation-fields.md` — **loaded on-demand** for metadata cross-checking by citation type.
