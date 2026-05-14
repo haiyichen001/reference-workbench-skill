@@ -16,11 +16,11 @@ compatibility: >
   Search MCPs (paper lookup): arxiv, scholar, paper-search, crossref.
   Tool MCPs (file reading): pdf-reader.
   Python package: rich.
-version: 1.3.0
+version: 2.0.0
 license: MIT
 metadata:
   author: haiyichen001
-  version: "1.3.0"
+  version: "2.0.0"
   category: academic-writing
   language: bilingual (中文 / English)
   tags:
@@ -70,18 +70,13 @@ mcp-categories:
 
 # Reference Workbench
 
-Two modes. **Auto-detect from user input** — do NOT ask the user to choose.
+Single pipeline: **Write → Self-Audit → Safety Check**.
 
-| User says (keywords) | Auto-enter | What it does |
-|----------------------|------------|--------------|
-| check, verify, audit, validate, 查, 验, 检测 | **Mode A — Check** | Existence + metadata + content support verification |
-| write, draft, rewrite, review, literature, intro, 写, 综述, 引言, 草稿 | **Mode B — Write** | Draft with `[CITE:xxx]` → cite_table.py → table → self-audit |
-
-If ambiguous ("帮我看看这篇论文"), default to **Mode A**. If the user provides a file to check → Mode A. If the user asks to produce or revise text → Mode B.
+Do NOT present this as two separate modes to the user. Writing and verification are phases of the same workflow — the verification step acts as a safety net after any major writing operation.
 
 ---
 
-## Phase 0 — MCP Dependency Check (Both Modes)
+## Phase 0 — MCP Dependency Check
 
 Scan MCP tools. Output two lines — search first, then tools:
 
@@ -90,50 +85,115 @@ Search:  arxiv ✅ | scholar ✅ | paper-search ✅ | crossref ✅
 Tool:    pdf-reader ✅
 ```
 
-If any missing, stop and output install commands. Also run `python ${CLAUDE_SKILL_DIR}/scripts/setup.py` to check Python and `rich`.
+If any required MCP is missing, stop and output install commands. Also run `python ${CLAUDE_SKILL_DIR}/scripts/setup.py` to check Python and `rich`.
 
 ---
 
-# Mode A — Citation Check
+## Phase 1 — Determine Task
 
-## Phase A1 — Read + Extract + Ask
+Auto-detect from user input. Do NOT ask "which mode?".
 
-### A1.1 Read file
+| User says (keywords) | Action |
+|----------------------|--------|
+| write, draft, rewrite, review, literature, intro, 写, 综述, 引言, 草稿 | → Phase 2 (Writing) |
+| check, verify, audit, validate, 查, 验, 检测 | → Phase 3 (Verification directly) |
+| Provides a file | Read file → go directly to Phase 3 (Verification) |
 
-| Format | Method |
-|--------|--------|
-| PDF | `mcp__pdf-reader__read_pdf` |
-| DOCX | `python-docx` via Bash |
-| TXT/MD | `Read` |
-| LaTeX | `Read` + parse `\cite{}` `\bibitem{}` |
+If ambiguous ("帮我看看这篇论文") and no file given, default to Writing.
 
-### A1.2 Extract citations
+---
 
-Output raw list:
+## Phase 2 — Writing & Self-Audit
+
+Core loop: **normalize → run `cite_table.py` → relay table → self-audit**.
+
+1. **LLM normalizes**: convert ANY citation format (`[REF01]`, `\cite{key}`, `[@key]`, bare `[1]`, etc) to `[CITE:descriptiveKey]`
+2. **Script verifies**: `cite_table.py` only reads `[CITE:key]`. Hard-coded, deterministic.
+3. **Table proves**: every normalized citation appears in output — nothing missed or invented.
+
+### When NOT to Use
+
+Single-paper summary, pure grammar polishing, non-academic writing, format conversion only.
+
+### Five Scenarios
+
+| User says | Agent does |
+|-----------|-----------|
+| New review | Draft with `[CITE:xxx]` → script → **table** |
+| Rewrite draft | Normalize existing citations to `[CITE:xxx]` → script → **table** |
+| Add citation | Insert `[CITE:xxx]` → re-run script → **table** |
+| Remove citation | Remove `[CITE:xxx]` → re-run script → **table** |
+| Audit | Re-run script → checks → **table** |
+
+Every scenario ends: `cite_table.py` → `Read cite_output.txt` → paste table + checks. Then proceed to Phase 3.
+
+The draft always uses `[CITE:descriptiveKey]` placeholders. The script numbers them and outputs the table — but the source of truth is the draft itself. Self-audit checks are always performed against the draft with `[CITE:xxx]` placeholders, never against the numbered output alone.
+
+### Always-On Checks
+
+After every citation change, re-run `cite_table.py` and walk through:
+
+1. **Stacking** — >3 in one bracket? Warn. >5? Block.
+2. **Format** — venue mismatch? Load `references/citation-formats.md` (on-demand) when user specifies a venue. Re-check after ref generation.
+3. **Order** — gaps or jumps? Script catches this.
+4. **Orphan** — in-text count != reference count? Report.
+5. **Tone** — `references/diplomatic-critique.md` (loaded at startup). Never "fails to", "ignores", "fundamentally flawed".
+6. **Citation depth** — most citations: **who + did what + found what + `[CITE:xxx]`**. Opening/transition sentences can be broad. Body paragraphs: each cited paper gets its own sentence.
+   - Two valid positions: sentence-end (`...reduced errors by 23% [CITE:smith2023].`) or natural pause (`...as shown in prior work [CITE:jones2021;CITE:lee2022], the trend...`).
+   - NEVER: `, [CITE:xxx],` (comma sandwich) or `Smith [CITE:smith2023] proposed` (author-attached). Script flags these as ⚠️.
+
+Report: one line per check, `✅` or `⚠️`. Then full re-scan (never fix one and skip the rest). Then read all `[CITE:xxx]` aloud from the draft to catch awkward flow.
+
+### Table Protocol (Mandatory)
+
+Auto-detect `.bib` file in project dir. If found, use `--bib` mode.
+
 ```
-File: paper.pdf (5 pages) | Found N citations | Type: journal/conference/...
-
-[1] journal | Vaswani et al. (2017) "Attention Is All You Need"
-    Location: §I, "code-centric automation..."
-[2] ...
+python ${CLAUDE_SKILL_DIR}/scripts/cite_table.py <draft> [--bib <bib_file>]
+Read: ${CLAUDE_SKILL_DIR}/scripts/cite_output.txt
+→ Paste table + audit. Then: "Need to add, remove, or change any citations?"
 ```
 
-### A1.3 Deduplicate
+Without `--bib`: 5 columns (# | Author | Body Context | Reference | Status). With `--bib`: 6 columns comparing body order, bib key, bib position, and reference list order. Bilingual (中文/English auto-detected). Repeated citations get `↳` sub-rows.
 
-Normalize by **title + first author** (title: strip punctuation, lowercase; first author: last name). Same paper cited multiple times → merge, keep all locations.
+### Reference Files
 
-```
-Dedup: N raw → M unique papers (N-M duplicates removed)
+- `anti-laziness-protocol.md` — **loaded at startup**. Mandatory 5-step verification gate. Itemized only, no batching.
+- `citation-placement-rules.md` — **loaded at startup**. Per-citation placement enforcement.
+- `diplomatic-critique.md` — **loaded at startup**. Mandatory tone guard.
+- `citation-formats.md` — **loaded on-demand** when user specifies a venue. IEEE/SCI/EI/GB7714/APA/MLA/Chicago/ACM rules.
+- `citation-fields.md` — **loaded on-demand** for metadata cross-checking by citation type.
 
-[1,7]  journal | Vaswani et al. (2017) "Attention Is All You Need"
-       Locations: §I "code-centric..." / §III "self-attention enables..."
-[2]    conference | ...
-[3,5,9] preprint | ...
-```
+### Script
 
-### A1.4 AskUserQuestion
+- `cite_table.py` — single core engine. Scan, number, table, position check, bilingual, `--bib` mode.
 
-After dedup, call `AskUserQuestion` with two questions:
+---
+
+## Phase 3 — Offer Citation Verification (Safety Net)
+
+**After every major writing operation completes** (new review, rewrite, or audit), call `AskUserQuestion` with a single question:
+
+**Question — Enable citation check? (single-select)**
+- header: "Citation Check"
+- options:
+  - `yes` / "Yes — verify every cited paper is real and correctly attributed"
+  - `no` / "No — skip verification for now"
+- multiSelect: false
+
+If user chooses `no` → skip to end. Output: "Citation verification skipped. Run `/reference-workbench check` anytime to verify your citations."
+
+If user chooses `yes` → proceed to Phase 4.
+
+Also reachable directly: if the user provides a file and says "check citations", start from Phase 4 directly after Phase 0.
+
+---
+
+## Phase 4 — Citation Verification
+
+### 4.1 — Ask Scope & Depth
+
+Call `AskUserQuestion` with two questions:
 
 **Question 1 — Scope (single-select)**
 - header: "Scope"
@@ -150,19 +210,50 @@ After dedup, call `AskUserQuestion` with two questions:
   - `deep` / "Deep — Full-text section-by-section (~50-150k tokens/citation) [Token-heavy]"
 - multiSelect: false
 
-Wait for user response before Phase A2.
+Wait for user response before Phase 4.2.
 
----
+### 4.2 — Read File
 
-## Phase A2 — Parallel Verification (10 per round)
+| Format | Method |
+|--------|--------|
+| PDF | `mcp__pdf-reader__read_pdf` |
+| DOCX | `python-docx` via Bash |
+| TXT/MD | `Read` |
+| LaTeX | `Read` + parse `\cite{}` `\bibitem{}` |
 
-### Rules
+### 4.3 — Extract Citations
+
+Output raw list:
+```
+File: paper.pdf (5 pages) | Found N citations | Type: journal/conference/...
+
+[1] journal | Vaswani et al. (2017) "Attention Is All You Need"
+    Location: §I, "code-centric automation..."
+[2] ...
+```
+
+### 4.4 — Deduplicate
+
+Normalize by **title + first author** (title: strip punctuation, lowercase; first author: last name). Same paper cited multiple times → merge, keep all locations.
+
+```
+Dedup: N raw → M unique papers (N-M duplicates removed)
+
+[1,7]  journal | Vaswani et al. (2017) "Attention Is All You Need"
+       Locations: §I "code-centric..." / §III "self-attention enables..."
+[2]    conference | ...
+[3,5,9] preprint | ...
+```
+
+### 4.5 — Parallel Verification (10 per round)
+
+#### Rules
 - Strictly 10 unique papers per round, overflow auto-continues
 - Each paper gets one independent general-purpose sub-agent, **all launched in parallel**
 - Agents update status via TaskUpdate
 - Round completes → auto-advance to next round
 
-### Single-paper agent task
+#### Single-paper agent task
 
 Each agent receives: original number list (e.g. `[1,7]`), title, authors, year, DOI/ArXiv ID (if available), context around each citation location (±3 sentences).
 
@@ -189,7 +280,7 @@ Record every fallback path. Final report shows actual data sources used.
 
 Cross-check against `references/citation-fields.md`. Author, title, journal, year, volume/issue/pages are mandatory match fields.
 
-**Layer C — Content support (depth set by user in Phase A1)**
+**Layer C — Content support (depth set by user in Phase 4.1)**
 
 | Depth | Scope |
 |-------|-------|
@@ -199,7 +290,7 @@ Cross-check against `references/citation-fields.md`. Author, title, journal, yea
 
 Extract the claim at each citation location, compare with actual paper content: supports / exaggerates / unrelated / contradicts.
 
-### Progress display
+#### Progress display
 
 Round start:
 ```
@@ -219,9 +310,7 @@ Round complete:
 ── Round 1/3 done — ✅8 ⚠️1 ❌0 🔍0 📝1 — 11 remaining, entering Round 2...
 ```
 
----
-
-## Phase A3 — Summary Report
+### 4.6 — Summary Report
 
 ```
 # Citation Verification Report
@@ -255,73 +344,6 @@ Exists? ─No→ ❌ Fabricated
                 ├Yes→ ✅ Verified
                 └Uncertain→ 🔍 Unverifiable
 ```
-
----
-
-# Mode B — Literature Review Writing
-
-Core loop: **normalize → run `cite_table.py` → relay table → self-audit**.
-
-1. **LLM normalizes**: convert ANY citation format (`[REF01]`, `\cite{key}`, `[@key]`, bare `[1]`, etc) to `[CITE:descriptiveKey]`
-2. **Script verifies**: `cite_table.py` only reads `[CITE:key]`. Hard-coded, deterministic.
-3. **Table proves**: every normalized citation appears in output — nothing missed or invented.
-
-## When NOT to Use
-
-Single-paper summary, pure grammar polishing, non-academic writing, format conversion only.
-
-## Five Scenarios
-
-| User says | Agent does |
-|-----------|-----------|
-| New review | Draft with `[CITE:xxx]` → script → **table** |
-| Rewrite draft | Normalize existing citations to `[CITE:xxx]` → script → **table** |
-| Add citation | Insert `[CITE:xxx]` → re-run script → **table** |
-| Remove citation | Remove `[CITE:xxx]` → re-run script → **table** |
-| Audit | Re-run script → checks → **table** |
-
-Every scenario ends: `cite_table.py` → `Read cite_output.txt` → paste table + checks.
-
-The draft always uses `[CITE:descriptiveKey]` placeholders. The script numbers them and outputs the table — but the source of truth is the draft itself. Self-audit checks are always performed against the draft with `[CITE:xxx]` placeholders, never against the numbered output alone.
-
-## Always-On Checks
-
-After every citation change, re-run `cite_table.py` and walk through:
-
-1. **Stacking** — >3 in one bracket? Warn. >5? Block.
-2. **Format** — venue mismatch? Load `references/citation-formats.md` (on-demand) when user specifies a venue. Re-check after ref generation.
-3. **Order** — gaps or jumps? Script catches this.
-4. **Orphan** — in-text count != reference count? Report.
-5. **Tone** — `references/diplomatic-critique.md` (loaded at startup). Never "fails to", "ignores", "fundamentally flawed".
-6. **Citation depth** — most citations: **who + did what + found what + `[CITE:xxx]`**. Opening/transition sentences can be broad. Body paragraphs: each cited paper gets its own sentence.
-   - Two valid positions: sentence-end (`...reduced errors by 23% [CITE:smith2023].`) or natural pause (`...as shown in prior work [CITE:jones2021;CITE:lee2022], the trend...`).
-   - NEVER: `, [CITE:xxx],` (comma sandwich) or `Smith [CITE:smith2023] proposed` (author-attached). Script flags these as ⚠️.
-
-Report: one line per check, `✅` or `⚠️`. Then full re-scan (never fix one and skip the rest). Then read all `[CITE:xxx]` aloud from the draft to catch awkward flow.
-
-## Table Protocol (Mandatory)
-
-Auto-detect `.bib` file in project dir. If found, use `--bib` mode.
-
-```
-python ${CLAUDE_SKILL_DIR}/scripts/cite_table.py <draft> [--bib <bib_file>]
-Read: ${CLAUDE_SKILL_DIR}/scripts/cite_output.txt
-→ Paste table + audit. Then: "Need to add, remove, or change any citations?"
-```
-
-Without `--bib`: 5 columns (# | Author | Body Context | Reference | Status). With `--bib`: 6 columns comparing body order, bib key, bib position, and reference list order. Bilingual (中文/English auto-detected). Repeated citations get `↳` sub-rows.
-
-## Reference Files
-
-- `anti-laziness-protocol.md` — **loaded at startup**. Mandatory 5-step verification gate. Itemized only, no batching.
-- `citation-placement-rules.md` — **loaded at startup**. Per-citation placement enforcement.
-- `diplomatic-critique.md` — **loaded at startup**. Mandatory tone guard.
-- `citation-formats.md` — **loaded on-demand** when user specifies a venue. IEEE/SCI/EI/GB7714/APA/MLA/Chicago/ACM rules.
-- `citation-fields.md` — **loaded on-demand** for metadata cross-checking by citation type.
-
-## Script
-
-- `cite_table.py` — single core engine. Scan, number, table, position check, bilingual, `--bib` mode.
 
 ---
 
