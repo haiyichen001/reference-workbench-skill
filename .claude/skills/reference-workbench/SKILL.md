@@ -63,6 +63,9 @@ mcp-categories:
     - crossref (Crossref DOI + OpenAlex + Semantic Scholar)
   tool:
     - pdf-reader (PDF extraction)
+  optional:
+    - zotero (reference library integration — local API, no key needed)
+    - deepl (academic translation / rephrasing — free API key)
 ---
 
 # Reference Workbench
@@ -314,3 +317,16 @@ Without `--bib`: 5 columns (# | Author | Body Context | Reference | Status). Wit
 ## Script
 
 - `cite_table.py` — single core engine. Scan, number, table, position check, bilingual, `--bib` mode.
+
+---
+
+## Optional MCPs (Not Required)
+
+These enhance the skill but are not mandatory. If missing, the skill runs normally.
+
+| MCP | What it adds | Install |
+|-----|-------------|---------|
+| **Zotero** | Search your Zotero library, import papers, read PDF annotations, write Word docs with live citations | `npx smithery install @alisoroushmd/zotero-mcp` |
+| **DeepL** | Academic translation (中文 ↔ English), glossary-locked terminology, rephrase for clarity | `npm install deepl-mcp-server` (needs free API key) |
+
+If installed, the agent can use them automatically during write sessions for reference management and translation tasks.

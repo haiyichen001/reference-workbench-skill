@@ -43,15 +43,29 @@ cp -r reference-workbench-skill/.claude/skills/reference-workbench ~/.claude/ski
 
 ### MCP dependencies
 
-Three MCP servers required:
+**Required:**
+
+| Category | MCP | Purpose |
+|----------|-----|---------|
+| Search | arxiv | arXiv paper lookup |
+| Search | scholar | Semantic Scholar verification |
+| Search | paper-search | PubMed / bioRxiv / Google Scholar |
+| Search | crossref | Crossref DOI + OpenAlex + Semantic Scholar |
+| Tool | pdf-reader | PDF text extraction |
 
 ```bash
 npx smithery install @smithery-ai/arxiv
 npx smithery install @smithery-ai/scholar
 npx smithery install @smithery-ai/paper-search
+pip install crossref-academic-mcp-server
 ```
 
-Also requires `pdf-reader` MCP server for PDF input.
+**Optional (enhanced workflow):**
+
+| MCP | What it adds | Install |
+|-----|-------------|---------|
+| Zotero | Reference library integration — search your library, import papers, Word citations | `npx smithery install @alisoroushmd/zotero-mcp` |
+| DeepL | Academic translation (中文 ↔ English), glossary-locked terminology | `npm install deepl-mcp-server` (free API key) |
 
 ## Usage
 
