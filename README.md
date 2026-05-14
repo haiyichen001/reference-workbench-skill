@@ -19,6 +19,8 @@ This skill merges and supersedes the former [citation-check-skill](https://githu
 | Self-audit | Auto-checks stacking, format, order, orphans, and tone after every edit |
 | Multi-format input | PDF, DOCX, TXT, Markdown, LaTeX |
 
+Also useful for: detecting AI-hallucinated references in papers — LLM-generated citations that look real but don't exist.
+
 ## Install
 
 ### Universal (any agent)
