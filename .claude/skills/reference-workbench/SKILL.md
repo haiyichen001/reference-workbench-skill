@@ -12,12 +12,15 @@ description: >
   "帮我查引用", "检查论文引用", "写文献综述", "验证参考文献", "引用查证".
   Merges former citation-check and introduction-review skills.
 allowed-tools: Read, Write, Edit, Bash, Grep, Glob, WebFetch, WebSearch, AskUserQuestion, Agent, TaskCreate, TaskUpdate, TaskList
-compatibility: Requires MCP servers: arxiv, scholar, paper-search, pdf-reader, crossref. Python package: rich.
-version: 1.2.0
+compatibility: >
+  Search MCPs (paper lookup): arxiv, scholar, paper-search, crossref.
+  Tool MCPs (file reading): pdf-reader.
+  Python package: rich.
+version: 1.3.0
 license: MIT
 metadata:
   author: haiyichen001
-  version: "1.2.0"
+  version: "1.3.0"
   category: academic-writing
   language: bilingual (中文 / English)
   tags:
@@ -46,11 +49,20 @@ metadata:
     - arXiv API (via arxiv MCP)
     - Google Scholar (via paper-search MCP)
     - PubMed / bioRxiv / medRxiv (via paper-search MCP)
+    - Crossref + OpenAlex (via crossref MCP)
   replaces:
     - citation-check-skill (https://github.com/haiyichen001/citation-check-skill)
     - introduction-review-skill (https://github.com/haiyichen001/introduction-review-skill)
   created: "2026-05-14"
   modified: "2026-05-14"
+mcp-categories:
+  search:
+    - arxiv (arXiv API)
+    - scholar (Semantic Scholar)
+    - paper-search (PubMed / bioRxiv / Google Scholar)
+    - crossref (Crossref DOI + OpenAlex + Semantic Scholar)
+  tool:
+    - pdf-reader (PDF extraction)
 ---
 
 # Reference Workbench
@@ -66,10 +78,11 @@ Two modes. The user chooses at start.
 
 ## Phase 0 — MCP Dependency Check (Both Modes)
 
-Scan MCP tools. Output one line:
+Scan MCP tools. Output two lines — search first, then tools:
 
 ```
-MCP: arxiv ✅ | scholar ✅ | paper-search ✅ | pdf-reader ✅ | crossref ✅
+Search:  arxiv ✅ | scholar ✅ | paper-search ✅ | crossref ✅
+Tool:    pdf-reader ✅
 ```
 
 If any missing, stop and output install commands. Also run `python ${CLAUDE_SKILL_DIR}/scripts/setup.py` to check Python and `rich`.
