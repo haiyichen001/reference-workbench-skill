@@ -73,10 +73,13 @@ pip install crossref-academic-mcp-server
 /reference-workbench
 ```
 
-Two modes available:
+Single pipeline: **Write → Self-Audit → Auto Quick Check → (when done) Offer Deep Check**.
 
-1. **Check mode** — provide a file or paste text to verify all citations
-2. **Write mode** — guided literature review writing with `[CITE:lastnameYEAR]` placeholders
+1. **Writing** — draft/rewrite/audit with `[CITE:xxx]` placeholders, auto-generate reference table
+2. **Quick check** — after every write operation, silently verifies each reference exists (no prompt)
+3. **Deep check** — when you're done, the agent asks once if you want to upgrade to normal or deep verification
+
+You can also use `/reference-workbench` directly with a file to run a full citation verification.
 
 ### Verification statuses
 

@@ -70,9 +70,10 @@ mcp-categories:
 
 # Reference Workbench
 
-Single pipeline: **Write → Self-Audit → Safety Check**.
+Single pipeline: **Write → Self-Audit → Auto Quick Check → (when done) Offer Deep Check**.
 
-Do NOT present this as two separate modes to the user. Writing and verification are phases of the same workflow — the verification step acts as a safety net after any major writing operation.
+- After every write operation, run a **silent quick check** — no user prompt needed.
+- When the user is done with all changes, **ask once** whether to upgrade to normal or deep.
 
 ---
 
@@ -125,7 +126,7 @@ Single-paper summary, pure grammar polishing, non-academic writing, format conve
 | Remove citation | Remove `[CITE:xxx]` → re-run script → **table** |
 | Audit | Re-run script → checks → **table** |
 
-Every scenario ends: `cite_table.py` → `Read cite_output.txt` → paste table + checks. Then proceed to Phase 3.
+Every scenario ends: `cite_table.py` → `Read cite_output.txt` → paste table + checks. Then proceed to **silent quick check** below.
 
 The draft always uses `[CITE:descriptiveKey]` placeholders. The script numbers them and outputs the table — but the source of truth is the draft itself. Self-audit checks are always performed against the draft with `[CITE:xxx]` placeholders, never against the numbered output alone.
 
@@ -170,26 +171,33 @@ Without `--bib`: 5 columns (# | Author | Body Context | Reference | Status). Wit
 
 ---
 
-## Phase 3 — Offer Citation Verification (Safety Net)
+## Phase 3 — Auto Quick Check (Silent)
 
-**After every major writing operation completes** (new review, rewrite, or audit), call `AskUserQuestion` with a single question:
+**After every write scenario completes, run this silently.** No AskUserQuestion, no prompt.
 
-**Question — Enable citation check? (single-select)**
-- header: "Citation Check"
-- options:
-  - `yes` / "Yes — verify every cited paper is real and correctly attributed"
-  - `no` / "No — skip verification for now"
-- multiSelect: false
+1. Extract all unique citations from the draft (parse `[CITE:xxx]` placeholders)
+2. For each unique citation, run a **quick** existence check only (no metadata/content layers):
+   - Try DOI lookup → arXiv lookup → title search. Stop at first hit.
+   - If all fail → flag as ❓ unchecked
+3. Output a one-line summary in the conversation:
 
-If user chooses `no` → skip to end. Output: "Citation verification skipped. Run `/reference-workbench check` anytime to verify your citations."
+```
+Quick check: 12 refs — 11 found ✅ | 1 unchecked ❓ (Smith 2022 — no DOI/arXiv match)
+```
 
-If user chooses `yes` → proceed to Phase 4.
+Do NOT ask the user for depth or scope. If all found → no extra output beyond the summary line.
 
-Also reachable directly: if the user provides a file and says "check citations", start from Phase 4 directly after Phase 0.
+### When the Draft Has No Citations Yet
+
+If the draft is still being written and has fewer than 2 `[CITE:xxx]` placeholders, skip the quick check. Resume after the next write operation.
 
 ---
 
-## Phase 4 — Citation Verification
+## Phase 4 — Deep Citation Verification (On Request)
+
+Reachable via two paths:
+- **Direct**: user provides a file and says "check citations" → start here after Phase 0
+- **Upgrade**: after completing all writing, Phase 5 offers this → jump here
 
 ### 4.1 — Ask Scope & Depth
 
@@ -344,6 +352,25 @@ Exists? ─No→ ❌ Fabricated
                 ├Yes→ ✅ Verified
                 └Uncertain→ 🔍 Unverifiable
 ```
+
+---
+
+## Phase 5 — Final Deep Check Offer
+
+When the user indicates they are done with all writing (session ending, "looks good", "done", "submit", etc.), call `AskUserQuestion` with one question:
+
+**Question — Upgrade to deeper check? (single-select)**
+- header: "Final Check"
+- options:
+  - `normal` / "Normal — re-verify with Abstract+Intro+Conclusion (~20-50k tokens/citation) [Recommended]"
+  - `deep` / "Deep — full-text section-by-section (~50-150k tokens/citation) [Token-heavy]"
+  - `no` / "No — quick checks were sufficient"
+- multiSelect: false
+
+Context: mention how many quick checks ran and how many refs passed ("We ran 3 quick checks on 15 refs — all found. Upgrade to a deeper verification?").
+
+If user chooses `normal` or `deep` → jump to Phase 4 with that depth and `all` scope.
+If user chooses `no` → output: "Done. Run `/reference-workbench check <file>` anytime to re-verify."
 
 ---
 
